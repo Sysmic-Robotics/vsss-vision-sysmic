@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <Spinnaker.h>
 #include "spdlog/spdlog.h"
 
 #define FRAME_WIDTH_DEFAULT 640
@@ -51,7 +52,7 @@
 
 #define CAM_ID "0"
 
-enum CaptureType { disabled = -1, videoCapture = 0, usbCameraCapture = 1 };
+enum CaptureType { disabled = -1, videoCapture = 0, usbCameraCapture = 1, spinnakerCapture = 2 };
 
 enum Distortions { NULO = 0, ELP = 1 };
 
@@ -95,6 +96,10 @@ class CameraManager {
    * @return { Return if the operation was succeeded }
    */
   bool init(std::string videoPath);
+
+  bool initSpinnaker(int index);
+
+  std::vector<std::string> returnSpinnakerCameraList();
 
   /**
    * @brief    { List configuration of the camera parameters }
@@ -458,6 +463,9 @@ class CameraManager {
   QProcess _v4l2_process;
   std::atomic<bool> _isFinished;
   std::atomic<bool> _isNewFrameAvaliable;
+
+  Spinnaker::SystemPtr _spinSystem;
+  Spinnaker::CameraPtr _spinCamera;
 
   Distortions _distortionOption;
   cv::Mat _map_x;

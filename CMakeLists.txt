@@ -126,3 +126,7 @@ find_package(SFML REQUIRED COMPONENTS network system)
 target_link_libraries(${PROJECT_NAME} sfml-network sfml-system)
 
 target_link_libraries(${PROJECT_NAME} ${Protobuf_LIBRARIES})
+# Spinnaker SDK
+target_include_directories(${PROJECT_NAME} PUBLIC /opt/spinnaker/include)
+target_link_directories(${PROJECT_NAME} PUBLIC /opt/spinnaker/lib)
+target_link_libraries(${PROJECT_NAME} Spinnaker)

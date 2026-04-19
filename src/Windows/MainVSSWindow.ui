@@ -358,6 +358,33 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="spinnakerTab">
+         <attribute name="title">
+          <string>Spinnaker</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_spinnaker">
+          <item>
+           <widget class="QWidget" name="spinnakerIndexWidget" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_spinnaker">
+             <property name="spacing"><number>0</number></property>
+             <property name="leftMargin"><number>0</number></property>
+             <property name="topMargin"><number>0</number></property>
+             <property name="rightMargin"><number>0</number></property>
+             <property name="bottomMargin"><number>0</number></property>
+             <item>
+              <widget class="QLabel" name="spinnakerIndexLabel">
+               <property name="text"><string>Camera:</string></property>
+               <property name="alignment"><set>Qt::AlignCenter</set></property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="spinnakerComboBox"/>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </widget>
        <widget class="QLabel" name="mousePositionLabel">
         <property name="geometry">

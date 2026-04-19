@@ -122,7 +122,23 @@ bool CameraManager::init(std::string videoPath) {
 
 void CameraManager::updateFrame() {
   cv::Mat frame;
-  if (!this->_capture.isOpened()) {
+  if (this->_captureType == spinnakerCapture) {
+    if (this->_spinCamera && !this->_isFinished) {
+      try {
+        Spinnaker::ImagePtr raw = this->_spinCamera->GetNextImage(1000);
+        if (!raw->IsIncomplete()) {
+          Spinnaker::ImageProcessor processor;
+          Spinnaker::ImagePtr bgr = processor.Convert(raw, Spinnaker::PixelFormat_BGR8);
+          frame = cv::Mat(bgr->GetHeight(), bgr->GetWidth(), CV_8UC3,
+                          bgr->GetData(), bgr->GetStride()).clone();
+        }
+        raw->Release();
+      } catch (Spinnaker::Exception& e) {
+        spdlog::get("General")->error("Spinnaker frame error: {}", e.what());
+        frame = cv::Mat::zeros(this->_frameHeight, this->_frameWidth, CV_8UC3);
+      }
+    }
+  } else if (!this->_capture.isOpened()) {
     if (this->_errorInFrame == ERROR_FRAME_FROM_IMAGE) {
       std::cout << "Error while getting an image from the camera." << std::endl;
     } else if (this->_errorInFrame == ERROR_FRAME_FROM_VIDEO) {
@@ -468,6 +484,17 @@ void CameraManager::setCameraIndex(int cameraIndex) {
 }
 
 void CameraManager::releaseCamera() {
+  if (this->_captureType == spinnakerCapture && this->_spinCamera) {
+    try {
+      this->_spinCamera->EndAcquisition();
+      this->_spinCamera->DeInit();
+    } catch (Spinnaker::Exception&) {}
+    this->_spinCamera = nullptr;
+    if (this->_spinSystem) {
+      this->_spinSystem->ReleaseInstance();
+      this->_spinSystem = nullptr;
+    }
+  }
   if (this->_capture.isOpened()) {
     this->_capture.release();
   }
@@ -638,4 +665,44 @@ void CameraManager::getDistortionParameters() {
       opencv_file.release();
       break;
   }
+}
+
+bool CameraManager::initSpinnaker(int index) {
+  this->_spinSystem = Spinnaker::System::GetInstance();
+  Spinnaker::CameraList camList = this->_spinSystem->GetCameras();
+  if (static_cast<int>(camList.GetSize()) <= index) {
+    camList.Clear();
+    this->_spinSystem->ReleaseInstance();
+    spdlog::get("General")->error("Spinnaker: camera index {} not found", index);
+    return false;
+  }
+  this->_spinCamera = camList.GetByIndex(index);
+  camList.Clear();
+  this->_spinCamera->Init();
+  this->_spinCamera->BeginAcquisition();
+  this->_frameWidth  = static_cast<int>(this->_spinCamera->Width.GetValue());
+  this->_frameHeight = static_cast<int>(this->_spinCamera->Height.GetValue());
+  this->_captureType = spinnakerCapture;
+  this->_cameraTimer.start();
+  spdlog::get("General")->info("Spinnaker camera {} initialized ({}x{})", index, this->_frameWidth, this->_frameHeight);
+  return true;
+}
+
+std::vector<std::string> CameraManager::returnSpinnakerCameraList() {
+  std::vector<std::string> result;
+  Spinnaker::SystemPtr system = Spinnaker::System::GetInstance();
+  Spinnaker::CameraList camList = system->GetCameras();
+  for (unsigned int i = 0; i < camList.GetSize(); i++) {
+    Spinnaker::CameraPtr cam = camList.GetByIndex(i);
+    Spinnaker::GenApi::INodeMap& nodeMap = cam->GetTLDeviceNodeMap();
+    Spinnaker::GenApi::CStringPtr modelName = nodeMap.GetNode("DeviceModelName");
+    std::string name = "Spinnaker Camera " + std::to_string(i);
+    if (Spinnaker::GenApi::IsAvailable(modelName) && Spinnaker::GenApi::IsReadable(modelName)) {
+      name = std::string(modelName->GetValue()) + " [" + std::to_string(i) + "]";
+    }
+    result.push_back(name);
+  }
+  camList.Clear();
+  system->ReleaseInstance();
+  return result;
 }

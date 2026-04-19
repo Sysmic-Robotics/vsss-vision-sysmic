@@ -34,6 +34,7 @@ MainVSSWindow::MainVSSWindow(QWidget *parent)
   m_mainWindowFrameTimer->start(30);
   this->m_cameraCapture = true;
   this->m_videoCapture = false;
+  this->m_spinnakerCapture = false;
   this->m_firstTimeOpeningCamera = false;
   this->m_isRecording = false;
   this->m_cameraDialog = nullptr;
@@ -236,6 +237,9 @@ void MainVSSWindow::on_capturePushButton_clicked() {
     } else if (this->m_videoCapture) {
       openSucceeded = CameraManager::singleton().init(
                         this->m_videoFileName.toLocal8Bit().constData());
+    } else if (this->m_spinnakerCapture) {
+      openSucceeded = CameraManager::singleton().initSpinnaker(
+                        this->m_ui->spinnakerComboBox->currentIndex());
     }
 
     if (openSucceeded) {
@@ -507,10 +511,20 @@ void MainVSSWindow::on_sourceTab_currentChanged(int index) {
     this->m_videoCapture = false;
     this->m_cameraCapture = true;
     this->m_ui->cameraIndexComboBox->setEnabled(true);
-  } else {
+  } else if (index == 1) {
     this->m_videoCapture = true;
     this->m_cameraCapture = false;
+    this->m_spinnakerCapture = false;
     this->m_ui->cameraIndexComboBox->setEnabled(false);
+  } else if (index == 2) {
+    this->m_videoCapture = false;
+    this->m_cameraCapture = false;
+    this->m_spinnakerCapture = true;
+    this->m_ui->cameraIndexComboBox->setEnabled(false);
+    this->m_ui->spinnakerComboBox->clear();
+    std::vector<std::string> spinList = CameraManager::singleton().returnSpinnakerCameraList();
+    for (const auto& name : spinList)
+      this->m_ui->spinnakerComboBox->addItem(QString::fromStdString(name));
   }
 }
 

@@ -109,6 +109,7 @@ private:
   bool m_isCaptureOpen;
   bool m_cameraCapture;
   bool m_videoCapture;
+  bool m_spinnakerCapture;
   bool m_firstTimeOpeningCamera;
   bool m_isRecording;
 
