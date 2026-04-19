@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>VSS-Vision (RobôCIn)</string>
+   <string>VSS-Vision (Sysmic Robotics)</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../image.qrc">
