@@ -36,6 +36,7 @@ set(SOURCES
     src/CameraManager/CameraThread.cpp
     src/Vision/PositionProcessing/runlengthencoding.cpp
     src/Vision/PositionProcessing/BlobDetection.cpp
+    src/Vision/PositionProcessing/ArucoDetection.cpp
     src/TBBThreadManager.cpp
     src/Field/Field.cpp
     src/GameInfo/GameInfo.cpp
@@ -75,6 +76,7 @@ set(HEADERS
     src/CameraManager/CameraThread.h
     src/Vision/PositionProcessing/runlengthencoding.h
     src/Vision/PositionProcessing/BlobDetection.h
+    src/Vision/PositionProcessing/ArucoDetection.h
     src/TBBThreadManager.h
     src/Utils/Types.h
     src/Field/Field.h

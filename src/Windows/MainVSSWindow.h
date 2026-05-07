@@ -74,6 +74,8 @@ class MainVSSWindow : public QMainWindow {
 
   void on_stopButton_clicked();
 
+  void on_useArucoToggled(bool checked);
+
   void readMainWindowConfig();
 
   void saveMainWindowConfig();

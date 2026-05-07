@@ -24,6 +24,7 @@
 #include "Vision/PositionProcessing/PositionProcessing.h"
 #include "Vision/ImageProcessing/ImageProcessing.h"
 #include "Vision/PositionProcessing/BlobDetection.h"
+#include "Vision/PositionProcessing/ArucoDetection.h"
 #include "Vision/PositionProcessing/runlengthencoding.h"
 #include "Vision/ImageProcessing/ImageProcessing.h"
 #include "Vision/ImageProcessing/LUTSegmentation.h"
@@ -73,6 +74,16 @@ private:
    * { object responsible for robot detection in a segmented frame }
    */
   PositionProcessing* _detection;
+
+  /**
+   * { object responsible for robot detection using ArUco markers (raw BGR frame) }
+   */
+  ArucoDetection* _arucoDetector;
+
+  /**
+   * { when true, skip LUT segmentation/RLE and use ArUco detector instead }
+   */
+  bool _useAruco;
 
   RunLengthEncoding* _compression;
 
@@ -354,6 +365,22 @@ public:
     *
   */
   double getVisionRunTime();
+
+  /**
+   * @brief    Enable/disable ArUco-based detection. When enabled, segmentation
+   *           and RLE/Blob steps are skipped and ArucoDetection runs on the raw frame.
+   */
+  void setUseAruco(bool enabled);
+
+  /**
+   * @brief    Returns whether ArUco detection is currently active.
+   */
+  bool useAruco();
+
+  /**
+   * @brief    Direct access to the ArUco detector (for UI configuration).
+   */
+  ArucoDetection* arucoDetector();
 };
 
 #endif

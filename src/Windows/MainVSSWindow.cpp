@@ -67,6 +67,18 @@ MainVSSWindow::MainVSSWindow(QWidget *parent)
   initColors();
   Field::set3x3();
   this->m_ui->DistortionComboBox->setCurrentText("ELP-USB");
+
+  // ArUco detector toggle in Configure menu
+  if (m_ui->menuConfigure) {
+    QAction *arucoAction = m_ui->menuConfigure->addAction(tr("Use ArUco Detector"));
+    arucoAction->setCheckable(true);
+    arucoAction->setChecked(Vision::singleton().useAruco());
+    connect(arucoAction, &QAction::toggled, this, &MainVSSWindow::on_useArucoToggled);
+  }
+}
+
+void MainVSSWindow::on_useArucoToggled(bool checked) {
+  Vision::singleton().setUseAruco(checked);
 }
 
 void MainVSSWindow::initColors() {

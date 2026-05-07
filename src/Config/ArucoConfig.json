@@ -1,0 +1,15 @@
+{
+  "ROBOT1": 256,
+  "ROBOT2": 272,
+  "ROBOT3": 273,
+  "ADV1":   771,
+  "ADV2":   939,
+  "ADV3":   955,
+  "ballHueLow":  6,
+  "ballSatLow":  80,
+  "ballValLow":  100,
+  "ballHueHigh": 30,
+  "ballSatHigh": 255,
+  "ballValHigh": 255,
+  "ballMinArea": 250
+}

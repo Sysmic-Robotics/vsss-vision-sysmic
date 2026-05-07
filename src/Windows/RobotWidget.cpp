@@ -1,7 +1,10 @@
 #include "RobotWidget.h"
 #include <iostream>
+#include <QInputDialog>
+#include <QString>
 #include "ui_RobotWidget.h"
 #include "Vision/Vision.h"
+#include "Vision/PositionProcessing/ArucoDetection.h"
 
 RobotWidget::RobotWidget(const size_t &t_index, QWidget *parent)
   : QWidget(parent),
@@ -102,4 +105,24 @@ void RobotWidget::update() {
   m_ui->numberRobot->setPixmap(m_numbersImage.copy(region));
 }
 
-void RobotWidget::on_toolsButtonRobot_clicked() { }
+void RobotWidget::on_toolsButtonRobot_clicked() {
+  ArucoDetection *aruco = Vision::singleton().arucoDetector();
+  if (!aruco) return;
+
+  if (static_cast<int>(m_index) >= ArucoDetection::kEntityCount) return;
+
+  int currentId = aruco->getMarkerId(static_cast<int>(m_index));
+  if (currentId < 0) currentId = 0;
+
+  bool ok = false;
+  int newId = QInputDialog::getInt(
+      this,
+      tr("ArUco marker ID"),
+      tr("Marker ID for robot %1 (use -1 to disable):").arg(m_index + 1),
+      currentId, -1, 1023, 1, &ok);
+
+  if (!ok) return;
+
+  aruco->setMarkerId(static_cast<int>(m_index), newId);
+  aruco->saveToFile();
+}

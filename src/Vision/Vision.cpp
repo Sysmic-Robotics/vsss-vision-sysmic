@@ -8,6 +8,8 @@ Vision::Vision()
     this->_detection = new BlobDetection();
     this->_detection->init();
     this->_detection->setTeamColor(getTeamColor());
+    this->_arucoDetector = new ArucoDetection();
+    this->_useAruco = false;
     this->_segmentation = new LUTSegmentation();
     this->_correction = new WarpCorrection();
     this->_compression = new RunLengthEncoding();
@@ -35,6 +37,9 @@ Vision::~Vision()
     this->_visionStatusLocker.lock();
     if (this->_detection)
         delete this->_detection;
+
+    if (this->_arucoDetector)
+        delete this->_arucoDetector;
 
     if (this->_segmentation)
         delete(this->_segmentation);
@@ -74,11 +79,15 @@ void Vision::update()
     this->_processingFrame = this->_currentFrame.clone();
 
     if (this->_isProcessingEnabled) {
-
-        this->_processingFrame = this->_segmentation->run(this->_processingFrame);
-        std::vector< std::vector <Run> > runs = this->_compression->run(this->_processingFrame);
-        saveFrameDimensions(this->_processingFrame);
-        this->_detection->run(runs, this->_processingFrame.rows, this->_processingFrame.cols);
+        if (this->_useAruco && this->_arucoDetector) {
+            saveFrameDimensions(this->_processingFrame);
+            this->_arucoDetector->runFromFrame(this->_processingFrame);
+        } else {
+            this->_processingFrame = this->_segmentation->run(this->_processingFrame);
+            std::vector< std::vector <Run> > runs = this->_compression->run(this->_processingFrame);
+            saveFrameDimensions(this->_processingFrame);
+            this->_detection->run(runs, this->_processingFrame.rows, this->_processingFrame.cols);
+        }
     }
 }
 
@@ -173,8 +182,11 @@ void Vision::getSegmentationDebugFrame(cv::Mat& frame)
 void Vision::getDetectionDebugFrame(cv::Mat& frame)
 {
     this->_visionStatusLocker.lock();
-    if (this->_detection)
+    if (this->_useAruco && this->_arucoDetector) {
+        this->_arucoDetector->getDebugFrame(frame);
+    } else if (this->_detection) {
         this->_detection->getDebugFrame(frame);
+    }
     this->_visionStatusLocker.unlock();
 }
 
@@ -325,8 +337,11 @@ void Vision::getDetectionFrame(cv::Mat& frame)
 {
     this->_visionStatusLocker.lock();
 
-    if (this->_detection)
+    if (this->_useAruco && this->_arucoDetector) {
+        this->_arucoDetector->getDebugFrame(frame);
+    } else if (this->_detection) {
         this->_detection->getDebugFrame(frame);
+    }
 
     this->_visionStatusLocker.unlock();
 }
@@ -405,6 +420,8 @@ void Vision::setTeamColor(int color)
     this->_visionStatusLocker.lock();
     this->_teamColor = color;
     this->_detection->setTeamColor(this->_teamColor);
+    if (this->_arucoDetector)
+        this->_arucoDetector->setTeamColor(this->_teamColor);
     this->_visionStatusLocker.unlock();
 }
 
@@ -456,4 +473,24 @@ double Vision::getVisionRunTime() {
   double ret = this->_visionRunTime;
   this->_visionStatusLocker.unlock();
   return ret;
+}
+
+void Vision::setUseAruco(bool enabled)
+{
+    this->_visionStatusLocker.lock();
+    this->_useAruco = enabled;
+    this->_visionStatusLocker.unlock();
+}
+
+bool Vision::useAruco()
+{
+    this->_visionStatusLocker.lock();
+    bool ret = this->_useAruco;
+    this->_visionStatusLocker.unlock();
+    return ret;
+}
+
+ArucoDetection* Vision::arucoDetector()
+{
+    return this->_arucoDetector;
 }
