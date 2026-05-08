@@ -1,21 +1,41 @@
 #!/bin/bash
 # Ubuntu 22.04 LTS
 
+set -e
+
 # Update repos
 sudo apt update -y
 
 # Install SFML
-sudo apt install libsfml-dev -y
+sudo apt install -y libsfml-dev
 
-# Install OpenCV
-sudo apt install libopencv-dev -y
+# Install OpenCV (core + contrib for cv::aruco)
+sudo apt install -y libopencv-dev libopencv-contrib-dev
 
 # Install OpenGL + FreeGLUT3
-sudo apt install freeglut3-dev -y
+sudo apt install -y freeglut3-dev
 
-# Install QT5
-sudo apt install qtbase5-dev -y
+# Install Qt5
+sudo apt install -y qtbase5-dev
 
-# Intall Protobuf
-sudo apt install libprotobuf -y
-sudo apt install protobuf-compiler -y
+# Install Protobuf
+sudo apt install -y libprotobuf-dev protobuf-compiler
+
+# Install TBB (Intel Threading Building Blocks)
+sudo apt install -y libtbb-dev
+
+# Build essentials (cmake, g++, make)
+sudo apt install -y build-essential cmake
+
+cat <<EOF
+
+Done with system packages.
+
+NOTE: This project also requires the FLIR Spinnaker SDK at /opt/spinnaker/.
+The SDK is not in the apt repos. Download it from FLIR's website
+(spinnaker-*-Ubuntu22.04-amd64-pkg.tar.gz) and run its installer, or symlink
+your local install to /opt/spinnaker/.
+
+Without Spinnaker the project won't link, even for USB-only setups.
+See docs/ARUCO_PENDING.md for the plan to make Spinnaker optional.
+EOF
