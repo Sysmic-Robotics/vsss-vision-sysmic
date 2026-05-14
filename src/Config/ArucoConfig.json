@@ -11,5 +11,5 @@
   "ballHueHigh": 30,
   "ballSatHigh": 255,
   "ballValHigh": 255,
-  "ballMinArea": 250
+  "ballMinArea": 80
 }

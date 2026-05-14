@@ -86,6 +86,39 @@ Each robot slot (3 per team) maps to a single ArUco marker ID. To assign IDs:
 
 Use `-1` to disable a slot.
 
+### Tuning the ball detector (HSV)
+
+ArUco mode detects the ball by HSV thresholding plus a circularity filter (it
+rejects elongated/irregular shapes). Defaults are tuned for a bright orange
+ball but **must be re-tuned for your lighting and ball color**. To diagnose:
+
+1. **Log packets** (toggle `Configure → Log Network Packets (stdout)`) and
+   confirm `balls=0` is the issue.
+2. Open `Config/ArucoConfig.json` and adjust:
+   - `ballHueLow / ballHueHigh` — OpenCV uses Hue in `[0, 180]`. Orange typically lives in `[5, 25]`. Reds wrap around 0/180 so a red ball needs two ranges, not supported yet.
+   - `ballSatLow / ballSatHigh` — `[80, 255]` is conservative. Lower S if the ball looks washed-out under your lighting.
+   - `ballValLow / ballValHigh` — drop V floor if the ball is in shadow.
+   - `ballMinArea` — minimum pixel area to accept (defaults to 80). Lower if the ball appears tiny far from the camera.
+3. Save the file and re-launch (no rebuild needed).
+
+If HSV alone isn't reliable enough (e.g. orange shoes/cables in the field of
+view), see `docs/ARUCO_PENDING.md` — the planned fix is to add an interactive
+HSV trackbar calibrator and Kalman-based ball prediction.
+
+### Debugging the network output
+
+Toggle `Configure → Log Network Packets (stdout)`. Every UDP packet sent by
+`VisionServer` is printed to stdout in the format:
+
+```
+[VisionServer] pkt#123 bytes=87  balls=1  blue=3  yellow=0 -> 224.5.23.2:10015
+    ball       x=42.3 y=-17.1  px=(423,-171)
+    blue  id=0  x=10.2 y=5.4   ori=0.785  px=(102,54)
+    blue  id=1  ...
+```
+
+`x`/`y` are in **mm** (cm * 10), `pixel_x`/`pixel_y` are in **0.1 px units** (cm * 100), matching the SSL-Vision protobuf convention.
+
 ### Network output (downstream compatibility)
 
 ArUco and BlobDetection produce **identical** UDP packets — the consumer (vsss

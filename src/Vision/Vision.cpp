@@ -494,3 +494,18 @@ ArucoDetection* Vision::arucoDetector()
 {
     return this->_arucoDetector;
 }
+
+void Vision::setPacketLogging(bool enabled)
+{
+    this->_visionStatusLocker.lock();
+    if (this->server) this->server->setPacketLogging(enabled);
+    this->_visionStatusLocker.unlock();
+}
+
+bool Vision::packetLogging()
+{
+    this->_visionStatusLocker.lock();
+    bool ret = this->server ? this->server->packetLogging() : false;
+    this->_visionStatusLocker.unlock();
+    return ret;
+}

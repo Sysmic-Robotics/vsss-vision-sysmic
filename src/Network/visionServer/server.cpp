@@ -4,16 +4,18 @@
 #include <QtNetwork/QUdpSocket>
 #include <QtNetwork/QHostAddress>
 #include <QtCore/QString>
+#include <cstdio>
 
 
-VisionServer::VisionServer(QString address, int port){
+VisionServer::VisionServer(QString address, int port)
+    : _packetLogging(false), _packetCounter(0) {
 
     // create socket
     this->socket = new QUdpSocket();
-    
+
     if (this->socket->isOpen())
         this->socket->close();
-    
+
     this->socket->setSocketOption(QAbstractSocket::MulticastTtlOption, 1);
     this->_addr.setAddress(address);
     this->_port = quint16(port);
@@ -21,6 +23,14 @@ VisionServer::VisionServer(QString address, int port){
 
 VisionServer::~VisionServer(){
     socket->close();
+}
+
+void VisionServer::setPacketLogging(bool enabled) {
+    this->_packetLogging = enabled;
+}
+
+bool VisionServer::packetLogging() const {
+    return this->_packetLogging;
 }
 
 void VisionServer::send(std::vector<Entity> &entities) {
@@ -77,6 +87,37 @@ void VisionServer::send(std::vector<Entity> &entities) {
     // serialize packet to send
     QByteArray datagram(static_cast<int>(packet.ByteSizeLong()), static_cast<char>(0));
     packet.SerializeToArray(datagram.data(), datagram.size());
+
+    if (this->_packetLogging) {
+        const SSL_DetectionFrame &df = packet.detection();
+        std::printf("[VisionServer] pkt#%lu bytes=%d  balls=%d  blue=%d  yellow=%d -> %s:%u\n",
+                    static_cast<unsigned long>(++this->_packetCounter),
+                    datagram.size(),
+                    df.balls_size(),
+                    df.robots_blue_size(),
+                    df.robots_yellow_size(),
+                    this->_addr.toString().toStdString().c_str(),
+                    this->_port);
+
+        for (int i = 0; i < df.balls_size(); ++i) {
+            const SSL_DetectionBall &b = df.balls(i);
+            std::printf("    ball       x=%.1f y=%.1f  px=(%.0f,%.0f)\n",
+                        b.x(), b.y(), b.pixel_x(), b.pixel_y());
+        }
+        for (int i = 0; i < df.robots_blue_size(); ++i) {
+            const SSL_DetectionRobot &r = df.robots_blue(i);
+            std::printf("    blue  id=%d  x=%.1f y=%.1f  ori=%.3f  px=(%.0f,%.0f)\n",
+                        r.robot_id(), r.x(), r.y(), r.orientation(),
+                        r.pixel_x(), r.pixel_y());
+        }
+        for (int i = 0; i < df.robots_yellow_size(); ++i) {
+            const SSL_DetectionRobot &r = df.robots_yellow(i);
+            std::printf("    yellow id=%d  x=%.1f y=%.1f  ori=%.3f  px=(%.0f,%.0f)\n",
+                        r.robot_id(), r.x(), r.y(), r.orientation(),
+                        r.pixel_x(), r.pixel_y());
+        }
+        std::fflush(stdout);
+    }
 
     // send packet
     socket->writeDatagram(datagram,this->_addr, this->_port);

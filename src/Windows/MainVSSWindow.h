@@ -76,6 +76,8 @@ class MainVSSWindow : public QMainWindow {
 
   void on_useArucoToggled(bool checked);
 
+  void on_packetLoggingToggled(bool checked);
+
   void readMainWindowConfig();
 
   void saveMainWindowConfig();

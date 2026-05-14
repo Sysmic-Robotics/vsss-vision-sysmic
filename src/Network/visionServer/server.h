@@ -22,11 +22,16 @@ public:
     ~VisionServer();
     void send(std::vector<Entity> &entities);
 
+    void setPacketLogging(bool enabled);
+    bool packetLogging() const;
+
     QHostAddress _addr;
     quint16 _port;
 
 private:
     QUdpSocket *socket;
+    bool _packetLogging;
+    uint64_t _packetCounter;
 
 };
 #endif /* SERVER_H */

@@ -13,7 +13,7 @@
 ArucoDetection::ArucoDetection()
     : _ballLowerHsv(6, 80, 100),
       _ballUpperHsv(30, 255, 255),
-      _ballMinArea(250),
+      _ballMinArea(80),
       _myTeamColor(Color::BLUE)
 {
     _markerForEntity.fill(kInvalidId);
@@ -75,31 +75,67 @@ void ArucoDetection::detectBall(const cv::Mat &bgrFrame, Entity &ball)
     cv::Mat mask;
     cv::inRange(hsv, _ballLowerHsv, _ballUpperHsv, mask);
 
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel);
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::morphologyEx(mask, mask, cv::MORPH_OPEN,  kernel);
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
 
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     if (contours.empty()) return;
 
-    auto biggest = std::max_element(contours.begin(), contours.end(),
-        [](const std::vector<cv::Point> &a, const std::vector<cv::Point> &b) {
-            return cv::contourArea(a) < cv::contourArea(b);
-        });
+    // Pick the most ball-like contour: area >= min_area AND highest circularity score.
+    // circularity = 4*pi*area / perimeter^2  ∈ (0, 1]; perfect circle ~ 1.0
+    const double kMinCircularity = 0.55;
 
-    double area = cv::contourArea(*biggest);
-    if (area < _ballMinArea) return;
+    int    bestIdx     = -1;
+    double bestScore   = -1.0;
+    double bestArea    = 0.0;
+
+    for (size_t i = 0; i < contours.size(); ++i) {
+        double area = cv::contourArea(contours[i]);
+        if (area < _ballMinArea) continue;
+
+        double perim = cv::arcLength(contours[i], true);
+        if (perim <= 0.0) continue;
+
+        double circularity = (4.0 * CV_PI * area) / (perim * perim);
+        if (circularity < kMinCircularity) continue;
+
+        // Score favors round-and-reasonably-sized blobs. Tweak if needed.
+        double score = circularity * std::log(area + 1.0);
+        if (score > bestScore) {
+            bestScore = score;
+            bestIdx   = static_cast<int>(i);
+            bestArea  = area;
+        }
+    }
+
+    if (bestIdx < 0) {
+        // Fall back: nothing passed circularity test — use biggest blob ≥ min_area
+        // (helps when motion blur deforms the contour).
+        for (size_t i = 0; i < contours.size(); ++i) {
+            double area = cv::contourArea(contours[i]);
+            if (area >= _ballMinArea && area > bestArea) {
+                bestArea = area;
+                bestIdx  = static_cast<int>(i);
+            }
+        }
+        if (bestIdx < 0) return;
+    }
 
     cv::Point2f center;
     float radius;
-    cv::minEnclosingCircle(*biggest, center, radius);
+    cv::minEnclosingCircle(contours[bestIdx], center, radius);
 
     Point cmPos = Utils::convertPositionPixelToCm(Point(center.x, center.y));
     ball.update(cmPos, 0.0);
     ball.id(0);
 
     cv::circle(_debugFrame, center, static_cast<int>(radius), cv::Scalar(0, 165, 255), 2);
+    cv::putText(_debugFrame, "ball",
+                cv::Point(static_cast<int>(center.x + radius + 4), static_cast<int>(center.y)),
+                cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 165, 255), 1);
 }
 
 void ArucoDetection::runFromFrame(const cv::Mat &bgrFrame)

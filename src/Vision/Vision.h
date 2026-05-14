@@ -381,6 +381,16 @@ public:
    * @brief    Direct access to the ArUco detector (for UI configuration).
    */
   ArucoDetection* arucoDetector();
+
+  /**
+   * @brief    Enable/disable per-packet stdout logging in VisionServer.
+   */
+  void setPacketLogging(bool enabled);
+
+  /**
+   * @brief    Returns whether per-packet logging is active.
+   */
+  bool packetLogging();
 };
 
 #endif

@@ -74,11 +74,20 @@ MainVSSWindow::MainVSSWindow(QWidget *parent)
     arucoAction->setCheckable(true);
     arucoAction->setChecked(Vision::singleton().useAruco());
     connect(arucoAction, &QAction::toggled, this, &MainVSSWindow::on_useArucoToggled);
+
+    QAction *logAction = m_ui->menuConfigure->addAction(tr("Log Network Packets (stdout)"));
+    logAction->setCheckable(true);
+    logAction->setChecked(Vision::singleton().packetLogging());
+    connect(logAction, &QAction::toggled, this, &MainVSSWindow::on_packetLoggingToggled);
   }
 }
 
 void MainVSSWindow::on_useArucoToggled(bool checked) {
   Vision::singleton().setUseAruco(checked);
+}
+
+void MainVSSWindow::on_packetLoggingToggled(bool checked) {
+  Vision::singleton().setPacketLogging(checked);
 }
 
 void MainVSSWindow::initColors() {
